@@ -1,0 +1,8 @@
+{{ define "main" }}
+<div class="reading-width">
+  <header class="page-heading"><p class="eyebrow">JOURNAL</p><h1>{{ .Title }}</h1><div class="section-description">{{ .Content }}</div></header>
+  {{ range .RegularPages.GroupByDate "2006" "desc" }}
+  <section class="year-group"><h2>{{ .Key }}</h2><div class="essay-list">{{ range .Pages }}{{ partial "essay-row.html" . }}{{ end }}</div></section>
+  {{ else }}<p class="empty">还没有日志，留待慢慢记录。</p>{{ end }}
+</div>
+{{ end }}

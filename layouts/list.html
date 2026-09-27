@@ -1,0 +1,3 @@
+{{ define "main" }}
+<div class="reading-width"><header class="page-heading"><p class="eyebrow">ARCHIVE</p><h1>{{ .Title }}</h1>{{ .Content }}</header><div class="essay-list">{{ range .Pages.ByDate.Reverse }}{{ partial "essay-row.html" . }}{{ end }}</div></div>
+{{ end }}

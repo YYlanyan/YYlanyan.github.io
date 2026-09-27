@@ -1,0 +1,8 @@
+{{ define "main" }}
+<header class="page-heading"><p class="eyebrow">TECH & MAKING</p><h1>{{ .Title }}</h1><div class="section-description">{{ .Content }}</div></header>
+{{ $paginator := .Paginate .RegularPages.ByDate.Reverse }}
+{{ range $paginator.Pages.GroupByDate "2006" "desc" }}
+<section class="year-group"><h2>{{ .Key }}</h2><div class="card-grid">{{ range .Pages }}{{ partial "tech-card.html" . }}{{ end }}</div></section>
+{{ else }}<p class="empty">技术笔记，陆续记录。</p>{{ end }}
+{{ partial "pagination.html" . }}
+{{ end }}

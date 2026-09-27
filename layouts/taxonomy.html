@@ -1,0 +1,3 @@
+{{ define "main" }}
+<div class="reading-width"><header class="page-heading"><h1>标签</h1></header><div class="article-tags">{{ range .Data.Terms.Alphabetical }}<a href="{{ .Page.RelPermalink }}">{{ .Page.LinkTitle }} <span>{{ .Count }}</span></a>{{ end }}</div></div>
+{{ end }}

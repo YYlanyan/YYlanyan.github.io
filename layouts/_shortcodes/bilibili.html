@@ -1,0 +1,9 @@
+{{- $bvid := .Get "bvid" -}}
+{{- if not (findRE `^BV[0-9A-Za-z]{10}$` $bvid) -}}
+  {{- errorf "bilibili shortcode requires a valid BV identifier: %s" .Position -}}
+{{- end -}}
+{{- $title := .Get "title" | default "哔哩哔哩视频" -}}
+<figure class="video-embed">
+  <iframe src="https://player.bilibili.com/player.html?bvid={{ $bvid }}&amp;page=1&amp;autoplay=0" title="{{ $title }}" loading="lazy" allow="fullscreen; picture-in-picture" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe>
+  <figcaption><a href="https://www.bilibili.com/video/{{ $bvid }}/" target="_blank" rel="noopener noreferrer">在哔哩哔哩观看 ↗</a></figcaption>
+</figure>

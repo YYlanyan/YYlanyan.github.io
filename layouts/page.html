@@ -1,0 +1,18 @@
+{{ define "main" }}
+<article class="reading-width article">
+  <header class="article-header">
+    {{ if in (slice "essays" "journal" "tech" "fun") .Section }}<a class="back-link" href="{{ .CurrentSection.RelPermalink }}">← {{ .CurrentSection.Title }}</a>{{ end }}
+    <h1>{{ .Title }}</h1>
+    {{ if in (slice "essays" "journal" "tech" "fun") .Section }}<div class="article-meta"><time datetime="{{ .Date.Format "2006-01-02" }}">{{ .Date.Format "2006年1月2日" }}</time><span>{{ .ReadingTime }} 分钟阅读</span>{{ if .Draft }}<span>草稿预览</span>{{ end }}</div>{{ end }}
+    {{ if in (slice "tech" "fun") .Section }}{{ with .Description }}<p class="article-lead">{{ . }}</p>{{ end }}{{ end }}
+  </header>
+  {{ if in (slice "tech" "fun") .Section }}
+    {{ with .Resources.GetMatch "cover.*" }}<img class="article-cover" src="{{ .RelPermalink }}" alt="{{ $.Title }}演示画面" width="960" height="540">{{ end }}
+    {{ with .Params.demo }}<a class="demo-link" href="{{ . | relURL }}">打开互动演示 <span aria-hidden="true">↗</span></a>{{ end }}
+    {{ if .Fragments.Headings }}<details class="toc"><summary>文章目录</summary>{{ .TableOfContents }}</details>{{ end }}
+  {{ end }}
+  <div class="prose">{{ .Content }}</div>
+  {{ with .GetTerms "tags" }}<div class="article-tags">{{ range . }}<a href="{{ .RelPermalink }}"># {{ .LinkTitle }}</a>{{ end }}</div>{{ end }}
+  {{ if in (slice "essays" "journal" "tech" "fun") .Section }}<nav class="article-nav" aria-label="相邻文章">{{ with .PrevInSection }}<a href="{{ .RelPermalink }}"><span>上一篇</span>{{ .Title }}</a>{{ end }}{{ with .NextInSection }}<a href="{{ .RelPermalink }}"><span>下一篇</span>{{ .Title }}</a>{{ end }}</nav>{{ end }}
+</article>
+{{ end }}

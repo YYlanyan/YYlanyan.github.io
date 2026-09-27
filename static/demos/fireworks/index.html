@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🎆</title>
+<style>
+  html, body {
+    margin: 0;
+    height: 100%;
+    overflow: hidden;
+    background: radial-gradient(circle at bottom, #000010 0%, #000000 100%);
+    cursor: crosshair;
+  }
+  canvas {
+    display: block;
+  }
+  .love-text {
+    position: absolute;
+    font-family: "Microsoft Yahei", sans-serif;
+    font-size: 48px;
+    color: #ff99cc;
+    text-shadow: 0 0 20px #ff3399, 0 0 40px #ff66cc, 0 0 60px #ff99ff;
+    opacity: 1;
+    transition: opacity 2s ease-out, transform 2s ease-out;
+    pointer-events: none;
+    user-select: none;
+  }
+  .control-panel {
+    position: fixed;
+    top: 10px;
+    right: 10px;
+    background: rgba(20, 20, 30, 0.7);
+    color: white;
+    padding: 10px 15px;
+    border-radius: 10px;
+    font-family: sans-serif;
+    z-index: 10;
+  }
+  .control-panel label {
+    display: block;
+    margin-bottom: 5px;
+  }
+</style>
+</head>
+<body>
+<canvas id="fireworks"></canvas>
+
+<div class="control-panel">
+  <label>烟花大小: <span id="sizeValue">1.0</span></label>
+  <input type="range" id="fireworkSize" min="0.3" max="3" step="0.1" value="1">
+</div>
+
+<script>
+const canvas = document.getElementById("fireworks");
+const ctx = canvas.getContext("2d");
+const sizeSlider = document.getElementById("fireworkSize");
+const sizeValue = document.getElementById("sizeValue");
+
+let w, h;
+function resize() {
+  w = canvas.width = window.innerWidth;
+  h = canvas.height = window.innerHeight;
+}
+window.addEventListener("resize", resize);
+resize();
+
+let fireworkScale = parseFloat(sizeSlider.value);
+sizeSlider.addEventListener("input", () => {
+  fireworkScale = parseFloat(sizeSlider.value);
+  sizeValue.textContent = fireworkScale.toFixed(1);
+});
+
+class Particle {
+  constructor(x, y, color, vx, vy, life, size, generation = 1) {
+    this.x = x;
+    this.y = y;
+    this.color = color;
+    this.vx = vx;
+    this.vy = vy;
+    this.life = life;
+    this.size = size;
+    this.generation = generation; // 第几代烟花
+  }
+  update() {
+    this.x += this.vx;
+    this.y += this.vy;
+    this.vy += 0.02; // 重力
+    this.life -= 1;
+
+    // 有概率在生命后期触发二级小烟花
+    if (this.life < 10 && this.generation === 1 && Math.random() < 0.05) {
+      explode(this.x, this.y, this.color, 2);
+      this.life = 0;
+    }
+  }
+  draw() {
+    ctx.beginPath();
+    ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+    ctx.fillStyle = this.color;
+    ctx.fill();
+  }
+}
+
+class Firework {
+  constructor(sx, sy, tx, ty, color) {
+    this.x = sx;
+    this.y = sy;
+    this.tx = tx;
+    this.ty = ty;
+    this.color = color;
+    this.trail = [];
+    this.exploded = false;
+  }
+  update() {
+    if (!this.exploded) {
+      const dx = this.tx - this.x;
+      const dy = this.ty - this.y;
+      const dist = Math.sqrt(dx*dx + dy*dy);
+      const speed = Math.max(4, dist / 25);
+      this.x += (dx / dist) * speed;
+      this.y += (dy / dist) * speed;
+      this.trail.push({x:this.x, y:this.y});
+      if (this.trail.length > 8) this.trail.shift();
+      if (dist < 10) {
+        this.exploded = true;
+        explode(this.x, this.y, this.color, 1);
+        showLoveText(this.x, this.y);
+      }
+    }
+  }
+  draw() {
+    if (!this.exploded) {
+      ctx.beginPath();
+      ctx.moveTo(this.trail[0]?.x || this.x, this.trail[0]?.y || this.y);
+      for (let t of this.trail) ctx.lineTo(t.x, t.y);
+      ctx.strokeStyle = this.color;
+      ctx.lineWidth = 2;
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.arc(this.x, this.y, 3, 0, Math.PI * 2);
+      ctx.fillStyle = this.color;
+      ctx.fill();
+    }
+  }
+}
+
+let fireworks = [];
+let particles = [];
+
+function explode(x, y, color, generation = 1) {
+  const count = (generation === 1 ? 80 : 40) * fireworkScale;
+  for (let i = 0; i < count; i++) {
+    const angle = Math.random() * Math.PI * 2;
+    const speed = (Math.random() * 1.5 + 2) * (generation === 1 ? 1 : 0.5);
+    const vx = Math.cos(angle) * speed;
+    const vy = Math.sin(angle) * speed;
+    const size = (Math.random() * 2 + 1) * fireworkScale * (generation === 1 ? 1 : 0.6);
+    const life = (80 + Math.random() * 80) / (generation === 1 ? 1 : 1.5);
+    const newColor = generation === 1
+      ? `hsl(${Math.random() * 360}, 100%, 60%)`
+      : color;
+    particles.push(new Particle(x, y, newColor, vx, vy, life, size, generation));
+  }
+}
+
+function showLoveText(x, y) {
+  const text = document.createElement("div");
+  text.className = "love-text";
+  text.innerText = "❤️";
+  document.body.appendChild(text);
+  text.style.left = `${x - 100}px`;
+  text.style.top = `${y - 50}px`;
+
+  setTimeout(() => {
+    text.style.opacity = 0;
+    text.style.transform = "translateY(-80px) scale(1.2)";
+  }, 100);
+  setTimeout(() => text.remove(), 2500);
+}
+
+canvas.addEventListener("click", (e) => {
+  const color = `hsl(${Math.random() * 360}, 100%, 50%)`;
+  fireworks.push(new Firework(e.clientX, h, e.clientX, e.clientY, color));
+});
+
+function animate() {
+  requestAnimationFrame(animate);
+  ctx.fillStyle = "rgba(0, 0, 0, 0.15)";
+  ctx.fillRect(0, 0, w, h);
+
+  fireworks.forEach((fw, i) => {
+    fw.update();
+    fw.draw();
+    if (fw.exploded) fireworks.splice(i, 1);
+  });
+
+  particles.forEach((p, i) => {
+    p.update();
+    p.draw();
+    if (p.life <= 0) particles.splice(i, 1);
+  });
+}
+animate();
+</script>
+<a href="../../" style="position:fixed;right:16px;bottom:16px;z-index:1000001;padding:9px 14px;border:1px solid #d8dce3;border-radius:6px;background:#fff;color:#202429;font:14px/1.5 -apple-system,BlinkMacSystemFont,sans-serif;text-decoration:none">返回博客</a>
+</body>
+</html>

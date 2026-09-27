@@ -1,0 +1,4 @@
+{{- $english := eq (.Get "lang") "en" -}}
+<section class="bio-language" lang="{{ .Get "lang" }}" aria-label="{{ if $english }}English introduction{{ else }}中文介绍{{ end }}">
+  <div class="bio-language-body">{{ .Page.RenderString (dict "display" "block") .Inner }}</div>
+</section>

@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>🎃 万圣节点击特效</title>
+  <style>
+    html,body{height:100%;margin:0;background: radial-gradient(circle at 10% 10%, #1b1b2f 0%, #0f0f1a 50%, #000000 100%);} 
+    canvas{display:block; width:100%; height:100%;}
+  </style>
+</head>
+<body>
+  <canvas id="c"></canvas>
+
+  <script>
+    const canvas = document.getElementById('c');
+    const ctx = canvas.getContext('2d');
+    let DPR = Math.max(1, window.devicePixelRatio || 1);
+
+    function resize(){
+      DPR = Math.max(1, window.devicePixelRatio || 1);
+      const w = Math.floor(window.innerWidth);
+      const h = Math.floor(window.innerHeight);
+      canvas.style.width = w + 'px';
+      canvas.style.height = h + 'px';
+      canvas.width = Math.floor(w * DPR);
+      canvas.height = Math.floor(h * DPR);
+      ctx.setTransform(DPR,0,0,DPR,0,0);
+    }
+    window.addEventListener('resize', resize);
+    resize();
+
+    const particles = [];
+    function rand(min, max){ return Math.random() * (max - min) + min; }
+
+    function spawnGroup(x, y){
+      const isGhostGroup = Math.random() < 0.5;
+      const count = Math.floor(rand(8, 16));
+      for(let i=0;i<count;i++){
+        const spreadX = rand(-120, 120);
+        const spreadY = rand(-60, 60);
+        if(isGhostGroup){
+          particles.push(createGhost(x + spreadX, y + spreadY));
+        } else {
+          particles.push(createPumpkin(x + spreadX, y + spreadY));
+        }
+      }
+    }
+
+    function createGhost(x,y){
+      return {
+        type: 'ghost',
+        x, y,
+        vx: rand(-15, 15),
+        vy: rand(-70, -40),
+        life: rand(2200, 3200),
+        age: 0,
+        alpha: 1,
+        size: rand(32, 64),
+        swayOffset: Math.random()*1000,
+        swaySpeed: rand(0.001, 0.004),
+        floatAmp: rand(12, 24),
+        rotate: rand(-0.2, 0.2)
+      };
+    }
+
+    function createPumpkin(x,y){
+      return {
+        type: 'pumpkin',
+        x, y,
+        vx: rand(-100, 100),
+        vy: rand(-30, 30),
+        life: rand(4000, 6500),
+        age: 0,
+        alpha: 1,
+        size: rand(28, 60),
+        ang: rand(0, Math.PI*2),
+        angV: rand(-2,2),
+        bounce: 0.6 + Math.random()*0.25
+      };
+    }
+
+    function drawEmoji(ch, x, y, size, alpha, ang){
+      ctx.save();
+      ctx.globalAlpha = alpha;
+      ctx.translate(x, y);
+      if(ang) ctx.rotate(ang);
+      ctx.font = `${size}px system-ui, -apple-system, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji'`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(ch, 0, 0);
+      ctx.restore();
+    }
+
+    let last = performance.now();
+    function loop(now){
+      const dt = Math.min(40, now - last);
+      last = now;
+      update(dt);
+      render();
+      requestAnimationFrame(loop);
+    }
+
+    function update(dt){
+      const w = canvas.width / DPR;
+      const h = canvas.height / DPR;
+      for(let i=particles.length-1;i>=0;i--){
+        const p = particles[i];
+        p.age += dt;
+        if(p.type === 'ghost'){
+          const sway = Math.sin((p.age + p.swayOffset) * p.swaySpeed * 2 * Math.PI) * p.floatAmp;
+          p.x += sway * (dt/16);
+          p.y += p.vy * (dt/1000);
+          p.vy *= 0.995;
+          p.alpha = Math.max(0, 1 - p.age / p.life);
+          if(p.age >= p.life) particles.splice(i,1);
+        } else {
+          const G = 980;
+          p.vy += G * (dt/1000);
+          p.x += p.vx * (dt/1000);
+          p.y += p.vy * (dt/1000);
+          p.ang += p.angV * (dt/1000);
+          const floorY = h - p.size/2 - 8;
+          if(p.y > floorY){
+            p.y = floorY;
+            if(Math.abs(p.vy) > 60){
+              p.vy = -p.vy * p.bounce;
+              p.vx *= 0.86;
+              p.angV *= 0.9;
+            } else {
+              p.vy = 0;
+              p.vx *= 0.94;
+              p.angV *= 0.95;
+            }
+          }
+          p.alpha = Math.max(0, 1 - p.age / p.life);
+          if(p.age >= p.life) particles.splice(i,1);
+        }
+      }
+    }
+
+    function render(){
+      const w = canvas.width / DPR;
+      const h = canvas.height / DPR;
+      ctx.clearRect(0,0,w,h);
+      for(const p of particles){
+        drawEmoji(p.type === 'ghost' ? '👻' : '🎃', p.x, p.y, p.size, p.alpha, p.ang || 0);
+      }
+    }
+
+    function handlePointer(e){
+      const rect = canvas.getBoundingClientRect();
+      const x = (e.clientX - rect.left);
+      const y = (e.clientY - rect.top);
+      spawnGroup(x, y);
+    }
+    window.addEventListener('pointerdown', handlePointer);
+
+    requestAnimationFrame(loop);
+  </script>
+<a href="../../" style="position:fixed;right:16px;bottom:16px;z-index:1000001;padding:9px 14px;border:1px solid #d8dce3;border-radius:6px;background:#fff;color:#202429;font:14px/1.5 -apple-system,BlinkMacSystemFont,sans-serif;text-decoration:none">返回博客</a>
+</body>
+</html>

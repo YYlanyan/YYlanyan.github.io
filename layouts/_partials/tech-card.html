@@ -1,0 +1,10 @@
+<article class="tech-card">
+  <a class="cover-link" href="{{ .RelPermalink }}" tabindex="-1" aria-hidden="true">
+    {{ with .Resources.GetMatch "cover.*" }}<img src="{{ .RelPermalink }}" alt="" width="960" height="540" loading="lazy">{{ else }}<div class="cover-fallback"><span>{{ with $.Params.tags }}{{ index . 0 }}{{ else }}{{ $.CurrentSection.Title }}{{ end }}</span></div>{{ end }}
+  </a>
+  <div class="card-content">
+    <div class="card-meta"><time datetime="{{ .Date.Format "2006-01-02" }}">{{ .Date.Format "2006.01.02" }}</time>{{ with .Params.tags }}<span>{{ index . 0 }}</span>{{ end }}</div>
+    <h3><a href="{{ .RelPermalink }}">{{ .Title }}</a></h3>
+    <p>{{ .Description | default (.Summary | plainify | truncate 95) }}</p>
+  </div>
+</article>

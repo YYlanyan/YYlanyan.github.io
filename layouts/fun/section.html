@@ -1,0 +1,6 @@
+{{ define "main" }}
+<header class="page-heading"><p class="eyebrow">JUST FOR FUN</p><h1>{{ .Title }}</h1><div class="section-description">{{ .Content }}</div></header>
+{{ $paginator := .Paginate .RegularPages.ByDate.Reverse }}
+<div class="card-grid">{{ range $paginator.Pages }}{{ partial "tech-card.html" . }}{{ else }}<p class="empty">小乐趣，慢慢积攒。</p>{{ end }}</div>
+{{ partial "pagination.html" . }}
+{{ end }}

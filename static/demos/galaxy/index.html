@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>浪漫星尘旋涡</title>
+    <style>
+        body {
+            overflow: hidden;
+            margin: 0;
+            background: #160016;
+            font-family: sans-serif;
+        }
+
+        .color-controls {
+            position: fixed;
+            left: 20px;
+            bottom: 20px;
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 10px 15px;
+            border-radius: 12px;
+            backdrop-filter: blur(6px);
+            box-shadow: 0 0 10px rgba(255, 255, 255, 0.2);
+        }
+
+        .color-controls label {
+            font-size: 14px;
+            color: #fff;
+            margin-right: 4px;
+        }
+
+        .color-controls input[type="color"] {
+            width: 36px;
+            height: 36px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            background: none;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="color-controls">
+        <label>颜色 1：</label><input type="color" id="color1" value="#e8e34f">
+        <label>颜色 2：</label><input type="color" id="color2" value="#9f1465">
+    </div>
+
+    <script type="module">
+        import * as THREE from "https://cdn.skypack.dev/three@0.136.0";
+        import { OrbitControls } from "https://cdn.skypack.dev/three@0.136.0/examples/jsm/controls/OrbitControls";
+
+        let scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x160016);
+
+        let camera = new THREE.PerspectiveCamera(60, innerWidth / innerHeight, 1, 1000);
+        camera.position.set(0, 4, 21);
+
+        let renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(innerWidth, innerHeight);
+        document.body.appendChild(renderer.domElement);
+
+        window.addEventListener("resize", () => {
+            camera.aspect = innerWidth / innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(innerWidth, innerHeight);
+        });
+
+        let controls = new OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+
+        // 🌸 初始颜色（金黄 + 玫红）
+        let gu = {
+            time: { value: 0 },
+            color1: { value: new THREE.Color(0xe8e34f) },
+            color2: { value: new THREE.Color(0x9f1465) }
+        };
+
+        let sizes = [];
+        let shift = [];
+
+        function pushShift() {
+            shift.push(
+                Math.random() * Math.PI,
+                Math.random() * Math.PI * 2,
+                (Math.random() * 0.9 + 0.1) * Math.PI * 0.1,
+                Math.random() * 0.9 + 0.1
+            );
+        }
+
+        // 🌟 球体部分
+        let pts = new Array(50000).fill().map(() => {
+            sizes.push(Math.random() * 1.5 + 0.5);
+            pushShift();
+            return new THREE.Vector3().randomDirection().multiplyScalar(Math.random() * 0.5 + 9.5);
+        });
+
+        // 💫 外环部分
+        for (let i = 0; i < 100000; i++) {
+            let innerR = 10, outerR = 40;
+            let rand = Math.pow(Math.random(), 1.5);
+            let radius = innerR + (outerR - innerR) * rand;
+            let angle = Math.random() * 2 * Math.PI;
+            let y = (Math.random() - 0.5) * 2;
+            pts.push(new THREE.Vector3(
+                Math.cos(angle) * radius,
+                y,
+                Math.sin(angle) * radius
+            ));
+            sizes.push(Math.random() * 1.5 + 0.5);
+            pushShift();
+        }
+
+        let g = new THREE.BufferGeometry().setFromPoints(pts);
+        g.setAttribute("sizes", new THREE.Float32BufferAttribute(sizes, 1));
+        g.setAttribute("shift", new THREE.Float32BufferAttribute(shift, 4));
+
+        // ✨ 粒子材质
+        let m = new THREE.PointsMaterial({
+            size: 0.125,
+            transparent: true,
+            depthTest: false,
+            blending: THREE.AdditiveBlending,
+            onBeforeCompile: shader => {
+                shader.uniforms.time = gu.time;
+                shader.uniforms.color1 = gu.color1;
+                shader.uniforms.color2 = gu.color2;
+
+                shader.vertexShader = `
+                    uniform float time;
+                    uniform vec3 color1;
+                    uniform vec3 color2;
+                    attribute float sizes;
+                    attribute vec4 shift;
+                    varying vec3 vColor;
+                    ${shader.vertexShader}
+                `
+                    .replace(
+                        `gl_PointSize = size;`,
+                        `gl_PointSize = size * sizes;`
+                    )
+                    .replace(
+                        `#include <color_vertex>`,
+                        `#include <color_vertex>
+                        float d = length(abs(position)/vec3(40.,10.,40.));
+                        d = clamp(d, 0., 1.);
+                        vColor = mix(color1, color2, d);`
+                    )
+                    .replace(
+                        `#include <begin_vertex>`,
+                        `#include <begin_vertex>
+                        float t = time;
+                        float moveT = mod(shift.x + shift.z * t, PI2);
+                        float moveS = mod(shift.y + shift.z * t, PI2);
+                        transformed += vec3(cos(moveS) * sin(moveT), cos(moveT), sin(moveS) * sin(moveT)) * shift.w;
+                        `
+                    );
+
+                shader.fragmentShader = `
+                    varying vec3 vColor;
+                    ${shader.fragmentShader}
+                `
+                    .replace(
+                        `#include <clipping_planes_fragment>`,
+                        `#include <clipping_planes_fragment>
+                        float d = length(gl_PointCoord.xy - 0.5);
+                        `
+                    )
+                    .replace(
+                        `vec4 diffuseColor = vec4( diffuse, opacity );`,
+                        `vec4 diffuseColor = vec4(vColor, smoothstep(0.5, 0.1, d));`
+                    );
+            }
+        });
+
+        let p = new THREE.Points(g, m);
+        p.rotation.order = "ZYX";
+        p.rotation.z = 0.2;
+        scene.add(p);
+
+        // 🎠 动画循环
+        let clock = new THREE.Clock();
+        renderer.setAnimationLoop(() => {
+            controls.update();
+            let t = clock.getElapsedTime() * 0.5;
+            gu.time.value = t * Math.PI;
+            p.rotation.y = t * 0.05;
+            renderer.render(scene, camera);
+        });
+
+        // 🎨 实时颜色绑定
+        const c1 = document.getElementById("color1");
+        const c2 = document.getElementById("color2");
+        c1.addEventListener("input", e => gu.color1.value.set(e.target.value));
+        c2.addEventListener("input", e => gu.color2.value.set(e.target.value));
+
+        // ✅ 页面加载时同步 input → uniform
+        gu.color1.value.set(c1.value);
+        gu.color2.value.set(c2.value);
+    </script>
+<a href="../../" style="position:fixed;right:16px;bottom:16px;z-index:1000001;padding:9px 14px;border:1px solid #d8dce3;border-radius:6px;background:#fff;color:#202429;font:14px/1.5 -apple-system,BlinkMacSystemFont,sans-serif;text-decoration:none">返回博客</a>
+</body>
+
+</html>

@@ -1,0 +1,5 @@
+<article class="essay-row">
+  <time datetime="{{ .Date.Format "2006-01-02" }}">{{ .Date.Format "01.02" }}</time>
+  <h3><a href="{{ .RelPermalink }}">{{ .Title }}</a></h3>
+  {{ with .Params.tags }}<span class="essay-tag">{{ index . 0 }}</span>{{ end }}
+</article>

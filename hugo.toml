@@ -1,0 +1,60 @@
+baseURL = 'https://example.org/'
+locale = 'zh-CN'
+defaultContentLanguage = 'zh'
+title = 'Bob Lee'
+timeZone = 'Asia/Shanghai'
+hasCJKLanguage = true
+enableRobotsTXT = true
+
+[params]
+  description = '随笔、技术与一些小小的创造。'
+  author = 'Bob Lee'
+  browserTitle = 'Bob Lee | 李博'
+  avatar = 'images/avatar.png'
+
+[taxonomies]
+  tag = 'tags'
+
+[outputs]
+  home = ['HTML', 'RSS']
+  section = ['HTML', 'RSS']
+
+[pagination]
+  pagerSize = 9
+
+[markup]
+  [markup.highlight]
+    style = 'github'
+    noClasses = false
+  [markup.tableOfContents]
+    startLevel = 2
+    endLevel = 3
+
+[caches.images]
+  dir = ':cacheDir/images'
+
+[menus]
+  [[menus.main]]
+    name = '首页'
+    pageRef = '/'
+    weight = 10
+  [[menus.main]]
+    name = '随笔'
+    pageRef = '/essays'
+    weight = 20
+  [[menus.main]]
+    name = '日志'
+    pageRef = '/journal'
+    weight = 30
+  [[menus.main]]
+    name = '技术'
+    pageRef = '/tech'
+    weight = 40
+  [[menus.main]]
+    name = '小乐趣'
+    pageRef = '/fun'
+    weight = 50
+  [[menus.main]]
+    name = '关于'
+    pageRef = '/about'
+    weight = 60
