@@ -69,6 +69,16 @@ demo: demos/fireworks/
 
 自动发布流程已放在 `.github/workflows/pages.yml`：`main` 分支收到 push 时构建并部署；拉取请求只检查构建，不部署。
 
+网站已发布：[Bob Lee | 李博](https://yylanyan.github.io/)。源码仓库：[YYlanyan/YYlanyan.github.io](https://github.com/YYlanyan/YYlanyan.github.io)。Pages 来源已设为 **GitHub Actions**，HTTPS 已启用。
+
+日常更新：修改文章后，在本项目目录执行以下命令，等待 Actions 构建部署成功即可：
+
+```sh
+git add .
+git commit -m "Update blog content"
+git push
+```
+
 1. 创建或选择 GitHub 仓库。个人主页仓库叫 `用户名.github.io`，对应 `https://用户名.github.io/`；普通仓库对应 `https://用户名.github.io/仓库名/`。
 2. 将本项目源码上传到仓库的 `main` 分支。包括隐藏的 `.github` 文件夹、`hugo.toml`、`layouts`、`assets`、`archetypes`、`content`、`static` 和 `.hugo-version`。不要上传 `.tools`、`public` 或缓存。
 3. 仓库 **Settings → Pages → Build and deployment → Source** 选择 **GitHub Actions**。
@@ -121,4 +131,4 @@ demo: demos/fireworks/
 - 根域名与 `/Personal_Blog/` 子路径分别检查 245 个本地引用，文件与锚点均存在。
 - 小乐趣卡片 → 文章 → 演示，以及关于 → 万圣节 → 返回博客，导航通过。
 - 临时草稿未出现在正式构建的 HTML 或订阅输出中。
-- GitHub Actions 的远程构建、仓库权限与公开网址尚待选择仓库并实际部署后验证。
+- 2026-09-28：GitHub Actions 首次 Hugo 构建与部署成功；正式首页、项目地图、随笔、技术、RSS 和烟花演示均返回 HTTP 200。
