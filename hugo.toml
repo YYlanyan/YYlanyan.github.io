@@ -1,4 +1,4 @@
-baseURL = 'https://example.org/'
+baseURL = 'https://yylanyan.github.io/'
 locale = 'zh-CN'
 defaultContentLanguage = 'zh'
 title = 'Bob Lee'
@@ -54,6 +54,10 @@ enableRobotsTXT = true
     name = '小乐趣'
     pageRef = '/fun'
     weight = 50
+  [[menus.main]]
+    name = '项目地图'
+    pageRef = '/projects'
+    weight = 55
   [[menus.main]]
     name = '关于'
     pageRef = '/about'

@@ -1,0 +1,72 @@
+{{ define "main" }}
+{{ $data := hugo.Data.projects }}
+{{ $items := sort $data.items "date" "asc" }}
+{{ $first := int $data.start_year }}
+{{ $last := int (now.Format "2006") }}
+{{ $ids := slice }}
+{{ range $items }}
+  {{ if in $ids .id }}{{ errorf "Duplicate project id: %s" .id }}{{ end }}
+  {{ if not (findRE `^[a-z0-9]+(-[a-z0-9]+)*$` .id) }}{{ errorf "Invalid project id: %s" .id }}{{ end }}
+  {{ $ids = $ids | append .id }}
+  {{ $year := int ((time.AsTime .date).Format "2006") }}
+  {{ $first = math.Min $first $year }}{{ $last = math.Max $last $year }}
+{{ end }}
+{{ range $items }}{{ $id := .id }}{{ range .related }}{{ if or (eq . $id) (not (in $ids .)) }}{{ errorf "Invalid related project %s for %s" . $id }}{{ end }}{{ end }}{{ end }}
+{{ $css := resources.Get "css/projects.css" | minify | fingerprint }}
+<link rel="stylesheet" href="{{ $css.RelPermalink }}" integrity="{{ $css.Data.Integrity }}">
+<header class="page-heading project-map-heading">
+  <p class="eyebrow">PROJECT MAP</p><h1>{{ .Title }}</h1>
+  <p class="map-intro">把做过的事，贴在时间的墙上。</p>
+</header>
+<section class="board-shell" aria-label="项目便签墙">
+  <div class="board-toolbar">
+    <div class="board-title"><span class="board-status-dot" aria-hidden="true"></span>我的项目 <span>{{ len $items }} 张便签</span></div>
+    <div class="board-tools" hidden>
+      <button type="button" data-action="zoom-out" aria-label="缩小画布" title="缩小">−</button>
+      <output class="board-zoom" aria-label="当前缩放比例">100%</output>
+      <button type="button" data-action="zoom-in" aria-label="放大画布" title="放大">+</button>
+      <span class="board-tool-divider" aria-hidden="true"></span>
+      <button type="button" data-action="fit">全览</button>
+      <button type="button" data-action="reset">恢复排列</button>
+      <button type="button" class="board-fullscreen" aria-label="全屏显示项目便签墙" aria-pressed="false" title="全屏显示">
+        <svg class="fullscreen-expand" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 3H3v5m13-5h5v5M3 16v5h5m13-5v5h-5"/></svg>
+        <svg class="fullscreen-collapse" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 8h5V3m8 0v5h5M8 21v-5H3m18 0h-5v5"/></svg>
+      </button>
+    </div>
+  </div>
+  <div class="board-year-nav" aria-label="定位年份" hidden>
+    <span>{{ $data.date_label }}</span>
+    {{ range seq (int $first) (int $last) }}<button type="button" data-jump-year="{{ . }}">{{ . }}</button>{{ end }}
+  </div>
+  <div class="board-viewport" tabindex="0" role="region" aria-label="可平移缩放的项目画布" aria-describedby="board-help">
+    <div class="project-map" id="project-map">
+      <svg class="map-connections" aria-hidden="true"></svg>
+      {{ range seq (int $first) (int $last) }}
+        {{ $year := string . }}{{ $yearItems := slice }}
+        {{ range $items }}{{ if eq ((time.AsTime .date).Format "2006") $year }}{{ $yearItems = $yearItems | append . }}{{ end }}{{ end }}
+        <section class="map-year" data-year="{{ $year }}" aria-labelledby="year-{{ $year }}">
+          <header class="map-year-heading"><h2 id="year-{{ $year }}">{{ $year }}</h2><p>{{ if $yearItems }}{{ len $yearItems }} 个项目{{ else }}留待补充{{ end }}</p><span class="map-year-anchor" aria-hidden="true"></span></header>
+          <div class="map-year-notes">
+            {{ range $index, $item := $yearItems }}
+            <article class="map-project note-color-{{ mod $index 4 }}" id="project-{{ .id }}" data-project="{{ .id }}" data-date="{{ .date }}" data-related="{{ delimit .related " " }}" tabindex="0" aria-labelledby="title-{{ .id }}">
+              <div class="note-paper">
+                <button class="note-handle" type="button" aria-label="移动{{ .title }}便签，方向键微调，Shift 加方向键快速移动" title="拖动便签；也可用方向键移动" disabled>
+                  <time datetime="{{ .date }}">{{ (time.AsTime .date).Format "01.02" }}</time><span class="note-grip" aria-hidden="true">⠿</span>
+                </button>
+                <h3 id="title-{{ .id }}"><a href="{{ .url | relURL }}">{{ .title }}<span aria-hidden="true"> ↗</span></a></h3>
+                <p>{{ .description }}</p>
+                <div class="note-bottom"><div class="map-tags">{{ range .tags }}<span>{{ . }}</span>{{ end }}</div><button class="map-pin" type="button" aria-label="突出显示{{ .title }}的关联" aria-pressed="false" hidden>关联 ↗</button></div>
+              </div>
+            </article>
+            {{ end }}
+          </div>
+        </section>
+      {{ end }}
+    </div>
+  </div>
+  <div class="board-footer"><span class="board-save-status" role="status" aria-live="polite">便签位置保存在当前浏览器</span><button type="button" class="board-undo" hidden>撤销恢复</button><span class="board-legend"><i aria-hidden="true"></i>时间与项目关联</span></div>
+</section>
+<p class="map-help" id="board-help">拖动空白处平移，拖动便签调整位置；滚动平移，Ctrl / ⌘ + 滚轮缩放，触屏支持双指缩放。悬停或点击“关联”查看联系。</p>
+{{ $js := resources.Get "js/projects.js" | minify | fingerprint }}
+<script src="{{ $js.RelPermalink }}" integrity="{{ $js.Data.Integrity }}" defer></script>
+{{ end }}

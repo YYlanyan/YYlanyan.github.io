@@ -75,13 +75,15 @@ demo: demos/fireworks/
 4. 在 **Actions → Build and deploy Hugo blog** 手动运行一次，或再向 `main` 推送一次修改。
 5. 等待构建和部署均成功，在 Pages 设置或部署任务中打开网址。
 
-工作流通过 GitHub Pages 输出获取实际 `baseURL`，兼容根域名和仓库子路径。`hugo.toml` 里的 `https://example.org/` 是尚未选定仓库时的占位值；确定地址后应改为正式地址，以便手动构建也能产生正确的 canonical、RSS 与 sitemap。自动部署时会覆盖该值。
+本博客的目标仓库是 `YYlanyan/YYlanyan.github.io`，正式网址为 `https://yylanyan.github.io/`。`hugo.toml` 已使用该地址，手动构建也会生成正确的 canonical、RSS 与 sitemap。工作流通过 GitHub Pages 输出获取实际 `baseURL`，兼容根域名和仓库子路径。
 
 工作流下载固定版本的官方 Hugo，检查发布文件的 SHA-256，构建后上传 Pages artifact，再由 GitHub Pages 托管。读者不需要安装 Hugo，也不需要你保持电脑开机。
 
 如果仓库限制了 Actions 或 Pages，需要先在仓库设置中启用。不要将私人草稿或凭证提交到公开源码仓库；`draft: true` 仅阻止生成网页，不会隐藏 Git 仓库中的 Markdown。
 
 ## 修改布局
+
+项目地图位于 `/projects/`，使用可平移、缩放的便签墙。年份纵向、同年项目横向排列；便签可拖动，位置保存在当前浏览器。工具栏可全览、恢复排列并撤销恢复。在 `data/projects.yaml` 中添加项目即可自动扩展年份和连线。详见 [项目地图编辑教程](docs/PROJECT_MAP.md)。当前项目按收录日期排序。
 
 | 文件 | 用途 |
 | --- | --- |

@@ -1,0 +1,35 @@
+# 年份自动扩展到最新项目或当前年份；空年份保留位置。
+start_year: 2023
+# 当前日期为博客收录日期，并非项目实际完成日期。可改为真实日期。
+date_label: 收录时间
+# 新增项目：复制一项，填写唯一 id、日期、标题、简介、链接和标签。
+# related 填其他项目的 id。单向填写即可生成双向关联线。
+items:
+  - id: fireworks
+    date: "2026-09-27"
+    title: 烟花
+    description: 点击夜空，让一束光从发射轨迹散成无数粒子。
+    url: fun/fireworks/
+    tags: [Canvas, 粒子动画]
+    related: [galaxy, halloween]
+  - id: galaxy
+    date: "2026-09-27"
+    title: 星辰漩涡
+    description: 十五万颗粒子构成一片可以旋转、变色的星云。
+    url: fun/galaxy/
+    tags: [Three.js, 粒子动画]
+    related: []
+  - id: notes
+    date: "2026-09-27"
+    title: 鼓励便签
+    description: 把一句鼓励变成彩色便签，留在一面不断生长的墙上。
+    url: fun/notes/
+    tags: [JavaScript, 交互]
+    related: [halloween]
+  - id: halloween
+    date: "2026-09-27"
+    title: 万圣节
+    description: 轻点画面，触发一个小小的节日特效。
+    url: demos/halloween/
+    tags: [Canvas, 交互]
+    related: []

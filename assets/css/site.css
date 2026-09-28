@@ -72,3 +72,4 @@
   .theme-switcher{grid-column:2;grid-row:1}
   .site-header nav,.is-home .site-header nav,body:not(.is-home) .site-header nav{grid-column:1 / -1;grid-row:2;width:100%;justify-content:space-between;gap:8px}
 }
+@media(max-width:360px){.site-header nav,.is-home .site-header nav,body:not(.is-home) .site-header nav{gap:6px}.site-header nav a,.is-home .site-header nav a{font-size:13px}}
