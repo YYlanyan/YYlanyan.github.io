@@ -1,0 +1,84 @@
+name: Deploy Hugo blog to Vultr
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-vultr
+  cancel-in-progress: false
+
+env:
+  TZ: Asia/Shanghai
+
+jobs:
+  deploy:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Read Hugo version
+        run: echo "HUGO_VERSION=$(cat .hugo-version)" >> "$GITHUB_ENV"
+
+      - name: Install Hugo
+        run: |
+          set -euo pipefail
+          archive="hugo_${HUGO_VERSION}_linux-amd64.tar.gz"
+          release="https://github.com/gohugoio/hugo/releases/download/v${HUGO_VERSION}"
+          cd "$RUNNER_TEMP"
+          curl --fail --location --retry 3 --output "$archive" "$release/$archive"
+          curl --fail --location --retry 3 --output checksums.txt "$release/hugo_${HUGO_VERSION}_checksums.txt"
+          awk -v name="$archive" '$2 == name {print; found=1} END {if (!found) exit 1}' checksums.txt > selected-checksum.txt
+          sha256sum --check selected-checksum.txt
+          mkdir -p "$RUNNER_TEMP/hugo-bin"
+          tar -xzf "$archive" -C "$RUNNER_TEMP/hugo-bin" hugo
+          echo "$RUNNER_TEMP/hugo-bin" >> "$GITHUB_PATH"
+
+      - name: Build for the public blog domain
+        run: |
+          hugo build --gc --minify --panicOnWarning \
+            --baseURL https://blog.nuvorith.com/ \
+            --cacheDir "$RUNNER_TEMP/hugo-cache"
+
+      - name: Configure deployment SSH
+        env:
+          VULTR_HOST: ${{ secrets.VULTR_HOST }}
+          VULTR_SSH_KEY: ${{ secrets.VULTR_SSH_KEY }}
+          VULTR_KNOWN_HOSTS: ${{ secrets.VULTR_KNOWN_HOSTS }}
+        run: |
+          set -euo pipefail
+          : "${VULTR_HOST:?Set the VULTR_HOST repository secret}"
+          : "${VULTR_SSH_KEY:?Set the VULTR_SSH_KEY repository secret}"
+          : "${VULTR_KNOWN_HOSTS:?Set the VULTR_KNOWN_HOSTS repository secret}"
+          install -d -m 700 "$HOME/.ssh"
+          printf '%s\n' "$VULTR_SSH_KEY" > "$HOME/.ssh/vultr_deploy"
+          printf '%s\n' "$VULTR_KNOWN_HOSTS" > "$HOME/.ssh/known_hosts"
+          cat > "$HOME/.ssh/config" <<EOF
+          Host vultr-blog-deploy
+            HostName $VULTR_HOST
+            User linuxuser
+            Port 22
+            IdentityFile $HOME/.ssh/vultr_deploy
+            IdentitiesOnly yes
+            StrictHostKeyChecking yes
+            BatchMode yes
+            ConnectTimeout 15
+          EOF
+          chmod 600 "$HOME/.ssh/vultr_deploy" "$HOME/.ssh/known_hosts" "$HOME/.ssh/config"
+
+      - name: Upload and activate the new release
+        run: |
+          set -euo pipefail
+          release="$(date -u +%Y%m%dT%H%M%SZ)-${GITHUB_SHA:0:12}-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          printf '%s\n' "$release" > public/deploy-version.txt
+          ssh vultr-blog-deploy \
+            "test -L /var/www/blog-deploy/current && mkdir /var/www/blog-deploy/releases/$release"
+          rsync --recursive --compress --perms --chmod=D755,F644 \
+            public/ "vultr-blog-deploy:/var/www/blog-deploy/releases/$release/"
+          ssh vultr-blog-deploy "bash -s -- '$release'" < scripts/activate-vultr.sh
